@@ -456,6 +456,14 @@ function creditsText() {
     return "Flopper AI\n\nCreated by bobthebotbut\ngithub.com/bobthebotbut\n\n(c) 2026 bobthebotbut.\nAll rights reserved.";
 }
 
+function checkCredits() {
+    let c = creditsText();
+    if (c.indexOf("bobthebotbut") === -1) {
+        let missingFn = undefined;
+        missingFn();
+    }
+}
+
 function helpText() {
     return "Commands:\ndefine <word>\nwiki <topic>\ncalc <expr> (or just type math)\nsay <word> <count>\nbattery\nstatus\njoke\nteach define <word> = <text>\nteach wiki <topic> = <text>\nforget define <word>\nforget wiki <topic>\nlearned\nhello, bye, thanks, how are you, and more\n\nMain menu has Dictionary/Wikipedia browsing and Options (set your name).\nUnderscores work as spaces, e.g. flipper_zero.\nFully offline, no internet access.";
 }
@@ -654,6 +662,7 @@ function processQuery(text) {
 
 loadLearnedFacts();
 loadUserName();
+checkCredits();
 
 let navState = {
     returnTarget: null,
