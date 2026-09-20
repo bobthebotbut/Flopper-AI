@@ -1,0 +1,60 @@
+flipper zero::Flipper Zero is a portable multi-tool device for security researchers and hobbyists. It can interact with RFID, NFC, infrared, sub-GHz radio, iButton, GPIO, and more, and supports custom apps written in JavaScript.
+mjs::mJS is a small, restricted JavaScript engine designed for embedded devices. It supports a subset of the JavaScript language, and Flipper Zero apps are written against it.
+bluetooth::Bluetooth is a wireless technology standard for exchanging data over short distances using short-wavelength radio waves, commonly used for headsets, keyboards, and beacons.
+javascript::JavaScript is a high level programming language originally created for web browsers. It has since been adapted for many other uses, including scripting on embedded devices like Flipper Zero.
+radio waves::Radio waves are a type of electromagnetic radiation with wavelengths longer than infrared light, used for wireless communication such as sub-GHz remotes, Bluetooth, and Wi-Fi.
+eeprom::EEPROM stands for Electrically Erasable Programmable Read-Only Memory. It is a type of non-volatile memory that keeps its data even when power is removed.
+wifi::Wi-Fi is a family of wireless networking technologies that let devices connect to the internet or to each other using radio waves, typically over short to medium ranges.
+usb::USB, or Universal Serial Bus, is a common standard for cables and connectors used to transfer data and power between computers and devices.
+infrared::Infrared is a type of light just beyond what humans can see, commonly used by remote controls and short range wireless communication.
+rfid::RFID, or Radio Frequency Identification, uses radio waves to read data stored on a small tag, commonly used in access cards and inventory tracking.
+encryption::Encryption is the process of converting information into a coded form so it can only be read by someone with the right key.
+binary::Binary is a number system that uses only two digits, 0 and 1, and is the basic language computers use to represent data.
+open source::Open source refers to software whose source code is made publicly available, so anyone can view, use, modify, and share it.
+linux::Linux is a free and open source family of operating systems built around the Linux kernel, widely used on servers, embedded devices, and desktops.
+microcontroller::A microcontroller is a compact integrated circuit that combines a processor, memory, and input and output on a single chip, used to control electronic devices.
+nfc::NFC, or Near Field Communication, is a short range wireless technology that lets two devices communicate when held close together, used for payments and tags.
+albert einstein::Albert Einstein was a theoretical physicist best known for developing the theory of relativity, and he won the 1921 Nobel Prize in Physics.
+isaac newton::Isaac Newton was an English mathematician and physicist who formulated the laws of motion and the law of universal gravitation.
+nikola tesla::Nikola Tesla was an inventor and electrical engineer known for his contributions to the design of the modern alternating current electricity system.
+marie curie::Marie Curie was a physicist and chemist who conducted pioneering research on radioactivity, and was the first woman to win a Nobel Prize.
+charles darwin::Charles Darwin was a naturalist known for his theory of evolution by natural selection.
+stephen hawking::Stephen Hawking was a theoretical physicist known for his work on black holes and cosmology, and for his book A Brief History of Time.
+leonardo da vinci::Leonardo da Vinci was an Italian Renaissance artist, inventor, and scientist, famous for paintings like the Mona Lisa.
+steve jobs::Steve Jobs was a co-founder of Apple, known for helping create products like the Macintosh, iPod, iPhone, and iPad.
+bill gates::Bill Gates is a co-founder of Microsoft, and later became known for his philanthropic work through the Gates Foundation.
+elon musk::Elon Musk is an entrepreneur known for leading companies such as Tesla and SpaceX, focused on electric vehicles and space exploration.
+mark zuckerberg::Mark Zuckerberg is a co-founder of Facebook, which later became part of the company Meta.
+nintendo::Nintendo is a Japanese video game company known for creating franchises like Mario, Zelda, and Pokemon, and consoles like the Switch.
+android::Android is a mobile operating system developed by Google, used on smartphones and tablets from many manufacturers.
+apple inc::Apple Inc. is a technology company known for products like the iPhone, iPad, Mac computers, and the iOS and macOS operating systems.
+google::Google is a technology company best known for its search engine, along with services like Gmail, Android, and YouTube.
+microsoft::Microsoft is a technology company known for the Windows operating system, Office software, and the Xbox gaming brand.
+sony::Sony is a Japanese technology and entertainment company known for products like the PlayStation game console and various electronics.
+playstation::PlayStation is a line of video game consoles made by Sony, first released in 1994.
+xbox::Xbox is a line of video game consoles made by Microsoft, first released in 2001.
+youtube::YouTube is a video sharing platform where users can upload, watch, and share videos, owned by Google.
+facebook::Facebook is a social media platform that lets people connect, share updates, and communicate with friends and family.
+instagram::Instagram is a social media platform focused on sharing photos and short videos.
+twitter::Twitter, later rebranded as X, is a social media platform for sharing short posts known as tweets.
+wikipedia::Wikipedia is a free, collaboratively edited online encyclopedia. This app has no internet access, so it can't reach the real one.
+amazon::Amazon is a large technology and e-commerce company known for online shopping, cloud computing, and devices like the Kindle and Echo.
+tesla::Tesla is an American company known for electric vehicles and clean energy products, co-founded and later led by Elon Musk.
+spacex::SpaceX is an aerospace company founded by Elon Musk, known for developing reusable rockets and spacecraft.
+nasa::NASA, the National Aeronautics and Space Administration, is the United States government agency responsible for space exploration.
+solar system::The solar system consists of the Sun and everything that orbits it, including the planets, moons, asteroids, and comets.
+black hole::A black hole is a region of space where gravity is so strong that nothing, not even light, can escape it.
+galaxy::A galaxy is a massive collection of stars, gas, dust, and dark matter, held together by gravity.
+dna::DNA, or deoxyribonucleic acid, is the molecule that carries genetic instructions for the development and function of living things.
+periodic table::The periodic table is a chart that organizes all known chemical elements by their properties and atomic number.
+volcano::A volcano is an opening in the Earth's crust through which molten rock, ash, and gases can escape.
+earthquake::An earthquake is a sudden shaking of the ground caused by movement along a fault in the Earth's crust.
+world war ii::World War II was a global conflict from 1939 to 1945, involving most of the world's nations and resulting in massive loss of life.
+ancient egypt::Ancient Egypt was a civilization along the Nile River in northeastern Africa, known for pyramids, pharaohs, and hieroglyphics.
+roman empire::The Roman Empire was one of the largest empires in history, centered on ancient Rome, known for its law, architecture, and military.
+moon landing::The Moon landing refers to the 1969 Apollo 11 mission, when astronauts Neil Armstrong and Buzz Aldrin became the first humans to walk on the Moon.
+climate change::Climate change refers to long-term shifts in temperatures and weather patterns, largely driven by human activities like burning fossil fuels.
+quantum computing::Quantum computing is a type of computing that uses quantum mechanical phenomena to process information in fundamentally new ways.
+artificial intelligence::Artificial intelligence is the field of computer science focused on creating systems that can perform tasks that normally require human intelligence.
+virtual reality::Virtual reality is a simulated, computer generated environment that a person can interact with, usually through a headset.
+bitcoin::Bitcoin is a decentralized digital currency that allows peer to peer transactions without a central bank.

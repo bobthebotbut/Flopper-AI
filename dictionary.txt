@@ -1,0 +1,124 @@
+flipper::a small portable multi-tool device for exploring radio, RFID, NFC, infrared and more.
+javascript::a scripting programming language, originally for web browsers, also used to script Flipper Zero apps.
+algorithm::a step by step procedure for solving a problem or completing a task.
+variable::a named storage location in a program that holds a value.
+function::a reusable block of code that performs a task and can be called by name.
+loop::a programming construct that repeats a block of code multiple times.
+array::an ordered list of values stored under a single variable name.
+boolean::a data type with only two possible values, true or false.
+integer::a whole number, with no fractional or decimal part.
+float::a number that can have a fractional, decimal part.
+string::a sequence of characters, used to represent text.
+object::a collection of related data stored as key and value pairs.
+cpu::central processing unit, the main chip that executes instructions in a computer.
+ram::random access memory, fast temporary storage used while a program runs.
+gpio::general purpose input output, a pin on a chip that can be controlled by software.
+bluetooth::a short range wireless technology used to connect and exchange data between devices.
+subghz::sub gigahertz, referring to radio frequencies below 1 GHz, often used for remotes and sensors.
+nfc::near field communication, a short range wireless technology used for contactless payments and tags.
+firmware::software that is built into a hardware device to control its low level operation.
+compiler::a program that translates source code written in one language into another, usually machine code.
+interpreter::a program that reads and executes source code directly, without compiling it first.
+debugger::a tool used to find and fix errors in a program by inspecting it as it runs.
+recursion::when a function calls itself in order to solve a smaller version of the same problem.
+api::application programming interface, a defined set of rules that lets programs talk to each other.
+library::a collection of pre-written code that other programs can reuse.
+protocol::an agreed set of rules that devices follow to communicate with each other.
+encryption::the process of scrambling data so that only authorized parties can read it.
+hash::a fixed size value produced from data, often used to check that data hasn't changed.
+interrupt::a signal that pauses a processor's normal work so it can handle an urgent event.
+register::a small, very fast storage location inside a CPU used to hold data being worked on.
+antenna::a device that converts electrical signals into radio waves and back again.
+frequency::how many times a wave repeats per second, usually measured in Hertz.
+resistor::an electronic component that limits the flow of electric current in a circuit.
+capacitor::an electronic component that stores electrical energy in an electric field.
+transistor::a semiconductor device used to switch or amplify electronic signals.
+sensor::a device that detects and measures a physical property, like light, motion, or temperature.
+microcontroller::a small computer on a single chip, containing a CPU, memory, and I/O, used to control devices.
+checksum::a small value calculated from data, used to detect errors after data is transmitted or stored.
+voltage::the electrical potential difference that pushes current through a circuit, measured in volts.
+current::the flow of electric charge through a conductor, measured in amperes.
+hello::a common greeting used when meeting someone or starting a conversation.
+hi::a casual greeting, short for hello.
+hey::a casual, friendly greeting or way to get someone's attention.
+goodbye::a word said when parting or ending a conversation.
+bye::a short, casual way of saying goodbye.
+please::a polite word used when making a request.
+thanks::a short, informal way of expressing gratitude.
+thank you::a polite phrase used to express gratitude.
+sorry::a word used to express regret or apologize.
+yes::a word used to agree or give an affirmative answer.
+no::a word used to disagree or give a negative answer.
+okay::a word used to show agreement or acceptance.
+friend::a person you know well and like, who is not usually a relative.
+family::a group of people related by blood, marriage, or close bonds.
+love::a strong feeling of deep affection or attachment.
+happy::feeling or showing pleasure and contentment.
+sad::feeling or showing sorrow or unhappiness.
+time::the ongoing progression of events, measured in seconds, minutes, hours, and so on.
+day::a 24 hour period, or the part of that period when it is light outside.
+night::the period of darkness between sunset and sunrise.
+water::a clear liquid essential for life, made of hydrogen and oxygen.
+food::any substance eaten to provide nutrition and energy.
+house::a building where people live.
+home::the place where a person lives, often associated with comfort and family.
+school::a place where people go to learn, especially children.
+work::an activity involving effort, often done to earn a living.
+money::a medium of exchange, such as coins and banknotes, used to buy goods and services.
+car::a wheeled motor vehicle used for transporting people.
+animal::a living creature that can move on its own and feeds on organic material.
+dog::a domesticated animal often kept as a pet, known for loyalty.
+cat::a small domesticated animal often kept as a pet, known for independence.
+tree::a tall plant with a trunk and branches, usually living for many years.
+sun::the star at the center of our solar system, providing light and heat to Earth.
+moon::the natural satellite that orbits the Earth.
+star::a giant ball of burning gas in space that produces its own light and heat.
+sky::the space above the Earth, visible from the ground, containing clouds and stars.
+earth::the third planet from the Sun, and the only known planet to support life.
+color::the visual property of an object determined by which wavelengths of light it reflects.
+number::a mathematical value used for counting, measuring, or labeling.
+letter::a written symbol used to represent a sound in a language.
+word::a single unit of language that carries meaning.
+sentence::a group of words that expresses a complete thought.
+language::a system of communication using words, symbols, or sounds.
+country::a nation with its own government, occupying a particular territory.
+city::a large town where many people live and work.
+planet::a large celestial body that orbits a star and does not produce its own light.
+world::the Earth, along with all the people, places, and things on it.
+universe::all of space, time, matter, and energy that exists.
+science::the systematic study of the natural world through observation and experiment.
+history::the study of past events, especially human affairs.
+math::short for mathematics, the study of numbers, quantities, and shapes.
+art::the expression of creativity or imagination, often through visual works, music, or writing.
+game::an activity done for entertainment, often with rules and goals.
+sport::a physical activity done competitively, often for exercise or entertainment.
+music::sound organized in a pleasing or expressive way, often with rhythm and melody.
+book::a set of printed or written pages bound together, containing information or a story.
+phone::a device used to communicate with others over distance, often called a telephone.
+smartphone::a mobile phone that can run apps, browse the internet, and perform many computer-like tasks.
+internet::a global network connecting computers so they can share information.
+computer::an electronic device that processes data according to a set of instructions.
+software::the programs and instructions that tell computer hardware what to do.
+hardware::the physical components of a computer or electronic device.
+app::short for application, a program designed to run on a phone, tablet, or computer.
+download::to copy data from a remote computer or server onto your own device.
+upload::to send data from your own device to a remote computer or server.
+password::a secret word or string of characters used to prove identity and gain access to something.
+username::a name chosen to identify a person on a computer system or online service.
+server::a computer that provides data or services to other computers over a network.
+database::an organized collection of data, usually stored and accessed electronically.
+cloud::a network of remote servers used to store, manage, and process data over the internet.
+router::a device that forwards data between computer networks, commonly used for home Wi-Fi.
+gps::Global Positioning System, a satellite based network used to determine location on Earth.
+laser::a device that produces a narrow, focused beam of light.
+satellite::an object placed in orbit around a planet, used for communication, navigation, or observation.
+email::a method of sending digital messages over the internet.
+website::a collection of related web pages accessed through the internet.
+browser::a program used to access and view websites on the internet.
+robot::a machine capable of carrying out tasks automatically, often programmable.
+electricity::a form of energy caused by the flow of electric charge.
+gravity::the force that attracts objects with mass toward each other, keeping us on the ground.
+weather::the state of the atmosphere at a place and time, including temperature and precipitation.
+season::one of the four divisions of the year: spring, summer, autumn, and winter.
+holiday::a day set aside for celebration or rest from work.
+birthday::the anniversary of the day a person was born.
