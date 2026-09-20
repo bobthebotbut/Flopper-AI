@@ -430,6 +430,10 @@ function listLearnedText() {
     return out;
 }
 
+function creditsText() {
+    return "Flopper AI\n\nCreated by bobthebotbut\ngithub.com/bobthebotbut\n\n(c) 2026 bobthebotbut.\nAll rights reserved.";
+}
+
 function helpText() {
     return "Commands:\ndefine <word>\nwiki <topic>\ncalc <expr> (or just type math)\nbattery\nstatus\njoke\nteach define <word> = <text>\nteach wiki <topic> = <text>\nforget define <word>\nforget wiki <topic>\nlearned\nhello, bye, thanks, how are you, and more\n\nMain menu has Dictionary/Wikipedia browsing and Options (set your name).\nUnderscores work as spaces, e.g. flipper_zero.\nFully offline, no internet access.";
 }
@@ -582,6 +586,9 @@ function processQuery(text) {
     if (lower === "help") {
         return helpText();
     }
+    if (lower === "credits") {
+        return creditsText();
+    }
 
     return "I'm an offline bot with limited built-in knowledge.\nType 'help' to see what I can do, or teach me something new.";
 }
@@ -605,7 +612,7 @@ if (wikiTopics.length === 0) {
 
 let views = {
     splash: dialogView.makeWith({ header: "Flopper AI", text: "Starting..." }),
-    mainMenu: makeSubmenu("Flopper AI", ["Ask / Chat", "Dictionary", "Wikipedia", "Battery", "Options", "Help", "Exit"]),
+    mainMenu: makeSubmenu("Flopper AI", ["Ask / Chat", "Dictionary", "Wikipedia", "Battery", "Options", "Help", "Credits", "Exit"]),
     textInput: textInputView.makeWith({
         header: "Ask or teach me:",
         minLength: 0,
@@ -640,6 +647,10 @@ eventLoop.subscribe(views.mainMenu.chosen, function (_sub, index, gui, views, na
         navState.returnTarget = views.mainMenu;
         gui.viewDispatcher.switchTo(views.answerBox);
     } else if (index === 6) {
+        views.answerBox.set("text", creditsText());
+        navState.returnTarget = views.mainMenu;
+        gui.viewDispatcher.switchTo(views.answerBox);
+    } else if (index === 7) {
         eventLoop.stop();
     }
 }, gui, views, navState, eventLoop, flipper);
