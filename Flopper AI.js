@@ -1,52 +1,10 @@
-// ai_chatbot.js
-// Offline "AI chatbot" for Flipper Zero, with a menu, a Wikipedia topic list,
-// battery reporting, and a teachable memory.
-//
-// IMPORTANT - SETUP:
-// This script expects two data files on the SD card, alongside where it
-// stores taught facts:
-//   /ext/apps_data/ai_chatbot/dictionary.txt
-//   /ext/apps_data/ai_chatbot/wiki.txt
-// Copy dictionary.txt and wiki.txt (provided alongside this script) into
-// that folder (create the folders if they don't exist yet). The script
-// searches these files on demand instead of loading them into memory, so
-// they can be as large as you want without running the interpreter out of
-// memory - the previous version broke because it baked all that text
-// directly into the script, which the interpreter has to parse and hold in
-// its much smaller RAM budget. Text files on the SD card don't have that
-// problem.
-//
-// NOTE: Flipper Zero JS has no networking module, so this cannot reach the
-// real Wikipedia or any online dictionary. The math evaluator is hand
-// written since mJS has no eval().
-//
-// Main menu:
-//   Ask / Chat  -> free text box for definitions, math, teaching, etc.
-//   Wikipedia   -> pick a topic from a list to read its summary
-//   Battery     -> shows current battery percentage
-//   Help        -> shows the command list
-//   Exit        -> quits the app
-//
-// Chat commands (typed into "Ask / Chat"):
-//   define <word>                    -> look up word (built-in + taught)
-//   wiki <topic>                     -> look up topic (built-in + taught)
-//   calc <expr>  /  math <expr>      -> evaluate a math expression
-//   <expr>                           -> if it looks like pure math, evaluates it
-//   battery                          -> battery percentage
-//   teach define <word> = <text>     -> teach a new word definition
-//   teach wiki <topic> = <text>      -> teach a new wiki-style summary
-//   forget define <word>             -> remove a taught definition
-//   forget wiki <topic>              -> remove a taught wiki entry
-//   learned                          -> list everything you've taught it
-//   hello / hi                       -> greeting
-//   help                             -> lists commands
-//
-// Underscores in anything you type are converted to spaces, e.g.
-// "teach_wiki_my_cat_=_an_orange_tabby" becomes "teach wiki my cat = an orange tabby".
+// ai_chatbot.js - Flopper AI
+// Setup: copy dictionary.txt and wiki.txt to /ext/apps_data/ai_chatbot/ on the SD card.
 
 let eventLoop = require("event_loop");
 let gui = require("gui");
 let submenuView = require("gui/submenu");
+let dialogView = require("gui/dialog");
 let textInputView = require("gui/text_input");
 let textBoxView = require("gui/text_box");
 let storage = require("storage");
@@ -56,25 +14,13 @@ let LEARNED_DIR = "/ext/apps_data/ai_chatbot";
 let LEARNED_PATH = "/ext/apps_data/ai_chatbot/learned.txt";
 let DICTIONARY_PATH = "/ext/apps_data/ai_chatbot/dictionary.txt";
 let WIKI_PATH = "/ext/apps_data/ai_chatbot/wiki.txt";
-
-// how many bytes to read at a time while scanning a data file. Small and
-// fixed, so memory use never grows with the size of the file being searched.
+let SETTINGS_PATH = "/ext/apps_data/ai_chatbot/settings.txt";
 let READ_CHUNK = 200;
 
-// Taught facts stay small and in memory (they're user-typed, not bulk data),
-// kept separate from the built-ins so they can be listed, forgotten, and
-// persisted independently. Each entry is a two-element array: [key, value]
 let learnedDefs = [];
 let learnedWiki = [];
+let userName = "";
 
-// ---------------------------------------------------------------------
-// Small string helpers (mJS has no split() or trim())
-// ---------------------------------------------------------------------
-
-// builds a submenu view. Your firmware's gui/submenu view rejects "items"
-// as a prop (even though Flipper's official docs list it), so build the
-// list using the generic View.addChild() method instead, one item at a
-// time - addChild() is documented to exist on every View type.
 function makeSubmenu(header, itemLabels) {
     let sm = submenuView.makeWith({ header: header });
     for (let i = 0; i < itemLabels.length; i++) {
@@ -95,36 +41,20 @@ function trimStr(s) {
     return s.slice(start, end);
 }
 
-// replaces every underscore with a space (so you can type widget_name
-// instead of "widget name" if spaces are awkward to enter on-device)
 function replaceUnderscoresWithSpaces(s) {
     let out = "";
     for (let i = 0; i < s.length; i++) {
         let c = s.charCodeAt(i);
-        if (c === 95) { // '_'
-            out += " ";
-        } else {
-            out += s.slice(i, i + 1);
-        }
+        out += (c === 95) ? " " : s.slice(i, i + 1);
     }
     return out;
 }
 
-// find `needle` in `s`, starting the search at index `fromIdx`
 function findFrom(s, needle, fromIdx) {
     let rem = s.slice(fromIdx);
     let idx = rem.indexOf(needle);
-    if (idx === -1) {
-        return -1;
-    }
-    return fromIdx + idx;
+    return idx === -1 ? -1 : fromIdx + idx;
 }
-
-// ---------------------------------------------------------------------
-// Hand written math expression evaluator (no eval() in mJS)
-// Supports + - * / and parentheses, with decimals and unary minus.
-// Each parse function takes (str, index) and returns [value, nextIndex].
-// ---------------------------------------------------------------------
 
 function skipSpaces(s, i) {
     while (i < s.length && s.charCodeAt(i) === 32) {
@@ -140,10 +70,7 @@ function parseNumberFromString(numStr) {
     }
     let intPart = numStr.slice(0, dotIdx);
     let fracPart = numStr.slice(dotIdx + 1);
-    let intVal = 0;
-    if (intPart.length > 0) {
-        intVal = parseInt(intPart, 10);
-    }
+    let intVal = intPart.length > 0 ? parseInt(intPart, 10) : 0;
     let fracVal = 0;
     if (fracPart.length > 0) {
         let fracInt = parseInt(fracPart, 10);
@@ -166,21 +93,20 @@ function parseNumber(s, i) {
             break;
         }
     }
-    let numStr = s.slice(start, i);
-    return [parseNumberFromString(numStr), i];
+    return [parseNumberFromString(s.slice(start, i)), i];
 }
 
 function parseFactor(s, i) {
     i = skipSpaces(s, i);
     let c = s.charCodeAt(i);
-    if (c === 45) { // unary minus
+    if (c === 45) {
         let r = parseFactor(s, i + 1);
         return [-r[0], r[1]];
     }
-    if (c === 40) { // '('
+    if (c === 40) {
         let r = parseExpr(s, i + 1);
         let j = skipSpaces(s, r[1]);
-        if (s.charCodeAt(j) === 41) { // ')'
+        if (s.charCodeAt(j) === 41) {
             j = j + 1;
         }
         return [r[0], j];
@@ -195,11 +121,11 @@ function parseTerm(s, i) {
     while (true) {
         j = skipSpaces(s, j);
         let c = j < s.length ? s.charCodeAt(j) : -1;
-        if (c === 42) { // '*'
+        if (c === 42) {
             let r2 = parseFactor(s, j + 1);
             value = value * r2[0];
             j = r2[1];
-        } else if (c === 47) { // '/'
+        } else if (c === 47) {
             let r2 = parseFactor(s, j + 1);
             value = value / r2[0];
             j = r2[1];
@@ -217,11 +143,11 @@ function parseExpr(s, i) {
     while (true) {
         j = skipSpaces(s, j);
         let c = j < s.length ? s.charCodeAt(j) : -1;
-        if (c === 43) { // '+'
+        if (c === 43) {
             let r2 = parseTerm(s, j + 1);
             value = value + r2[0];
             j = r2[1];
-        } else if (c === 45) { // '-'
+        } else if (c === 45) {
             let r2 = parseTerm(s, j + 1);
             value = value - r2[0];
             j = r2[1];
@@ -233,8 +159,7 @@ function parseExpr(s, i) {
 }
 
 function evalMath(expr) {
-    let r = parseExpr(expr, 0);
-    return r[0];
+    return parseExpr(expr, 0)[0];
 }
 
 function isMathExpression(s) {
@@ -256,31 +181,27 @@ function isMathExpression(s) {
     return sawDigit;
 }
 
-// ---------------------------------------------------------------------
-// Streaming file search (reads a small chunk at a time, never the whole
-// file at once, so memory use doesn't grow with file size)
-// ---------------------------------------------------------------------
-
-// Looks for a line "key::value" whose key matches `wantKey`. Returns the
-// value, or undefined if not found or the file doesn't exist.
-function findInFile(path, wantKey) {
+// shared streaming scanner: calls onLine(line) for each line in `path`,
+// reading a small fixed chunk at a time so memory doesn't grow with file
+// size. onLine returning true stops the scan early.
+function scanFile(path, onLine) {
     if (!storage.fileExists(path)) {
-        return undefined;
+        return;
     }
     let file = storage.openFile(path, "r", "open_existing");
     let carry = "";
-    let result = undefined;
-    let safetyCounter = 0;
-    let SAFETY_LIMIT = 5000; // guards against an unexpected infinite loop
+    let counter = 0;
+    let limit = 5000;
     while (true) {
-        safetyCounter = safetyCounter + 1;
-        if (safetyCounter > SAFETY_LIMIT) {
+        counter = counter + 1;
+        if (counter > limit) {
             break;
         }
         let chunk = file.read("ascii", READ_CHUNK);
-        let gotData = (chunk !== undefined && chunk !== null && chunk.length > 0);
-        let data = gotData ? (carry + chunk) : carry;
+        let got = (chunk !== undefined && chunk !== null && chunk.length > 0);
+        let data = got ? (carry + chunk) : carry;
         let pos = 0;
+        let stop = false;
         while (true) {
             let nl = findFrom(data, "\n", pos);
             if (nl === -1) {
@@ -288,85 +209,49 @@ function findInFile(path, wantKey) {
             }
             let line = data.slice(pos, nl);
             pos = nl + 1;
-            if (line.length > 0) {
-                let sep = findFrom(line, "::", 0);
-                if (sep !== -1 && line.slice(0, sep) === wantKey) {
-                    result = line.slice(sep + 2);
-                    break;
-                }
+            if (line.length > 0 && onLine(line) === true) {
+                stop = true;
+                break;
             }
         }
         carry = data.slice(pos);
-        if (result !== undefined) {
+        if (stop) {
             break;
         }
-        if (!gotData) {
-            // end of file; check any final line with no trailing newline
+        if (!got) {
             if (carry.length > 0) {
-                let sep = findFrom(carry, "::", 0);
-                if (sep !== -1 && carry.slice(0, sep) === wantKey) {
-                    result = carry.slice(sep + 2);
-                }
+                onLine(carry);
             }
             break;
         }
     }
     file.close();
+}
+
+function findInFile(path, wantKey) {
+    let result = undefined;
+    scanFile(path, function (line) {
+        let sep = findFrom(line, "::", 0);
+        if (sep !== -1 && line.slice(0, sep) === wantKey) {
+            result = line.slice(sep + 2);
+            return true;
+        }
+        return false;
+    });
     return result;
 }
 
-// Collects just the keys (not the values) of every "key::value" line in a
-// file, for building menu lists cheaply.
 function collectKeysFromFile(path) {
     let keys = [];
-    if (!storage.fileExists(path)) {
-        return keys;
-    }
-    let file = storage.openFile(path, "r", "open_existing");
-    let carry = "";
-    let safetyCounter = 0;
-    let SAFETY_LIMIT = 5000; // guards against an unexpected infinite loop
-    while (true) {
-        safetyCounter = safetyCounter + 1;
-        if (safetyCounter > SAFETY_LIMIT) {
-            break;
+    scanFile(path, function (line) {
+        let sep = findFrom(line, "::", 0);
+        if (sep !== -1) {
+            keys.push(line.slice(0, sep));
         }
-        let chunk = file.read("ascii", READ_CHUNK);
-        let gotData = (chunk !== undefined && chunk !== null && chunk.length > 0);
-        let data = gotData ? (carry + chunk) : carry;
-        let pos = 0;
-        while (true) {
-            let nl = findFrom(data, "\n", pos);
-            if (nl === -1) {
-                break;
-            }
-            let line = data.slice(pos, nl);
-            pos = nl + 1;
-            if (line.length > 0) {
-                let sep = findFrom(line, "::", 0);
-                if (sep !== -1) {
-                    keys.push(line.slice(0, sep));
-                }
-            }
-        }
-        carry = data.slice(pos);
-        if (!gotData) {
-            if (carry.length > 0) {
-                let sep = findFrom(carry, "::", 0);
-                if (sep !== -1) {
-                    keys.push(carry.slice(0, sep));
-                }
-            }
-            break;
-        }
-    }
-    file.close();
+        return false;
+    });
     return keys;
 }
-
-// ---------------------------------------------------------------------
-// Taught-facts storage (small, kept in memory + persisted to the SD card)
-// ---------------------------------------------------------------------
 
 function ensureLearnedDir() {
     if (!storage.fileExists(LEARNED_DIR)) {
@@ -414,8 +299,6 @@ function parseLearnedLine(line) {
 }
 
 function loadLearnedFacts() {
-    // taught facts are expected to stay small (user-typed), so a single
-    // bounded read is fine here, unlike the big built-in data files
     if (!storage.fileExists(LEARNED_PATH)) {
         return;
     }
@@ -442,8 +325,28 @@ function loadLearnedFacts() {
     }
 }
 
-// removes all entries in `arr` whose key matches `matchKey`; returns true if
-// anything was removed. Mutates `arr` in place (no reassignment, no splice).
+function loadUserName() {
+    if (!storage.fileExists(SETTINGS_PATH)) {
+        return;
+    }
+    let file = storage.openFile(SETTINGS_PATH, "r", "open_existing");
+    let content = file.read("ascii", 256);
+    file.close();
+    if (content === undefined || content === null) {
+        return;
+    }
+    let nl = findFrom(content, "\n", 0);
+    userName = trimStr(nl === -1 ? content : content.slice(0, nl));
+}
+
+function saveUserName(name) {
+    userName = name;
+    ensureLearnedDir();
+    let file = storage.openFile(SETTINGS_PATH, "w", "create_always");
+    file.write(name + "\n");
+    file.close();
+}
+
 function removeFromArray(arr, matchKey) {
     let found = false;
     let survivors = [];
@@ -464,7 +367,6 @@ function removeFromArray(arr, matchKey) {
 }
 
 function lookupLearnedArray(arr, key) {
-    // search from the end, so re-teaching a word overrides the older entry
     for (let i = arr.length - 1; i >= 0; i--) {
         if (arr[i][0] === key) {
             return arr[i][1];
@@ -475,18 +377,12 @@ function lookupLearnedArray(arr, key) {
 
 function lookupDefine(word) {
     let v = lookupLearnedArray(learnedDefs, word);
-    if (v !== undefined) {
-        return v;
-    }
-    return findInFile(DICTIONARY_PATH, word);
+    return v !== undefined ? v : findInFile(DICTIONARY_PATH, word);
 }
 
 function lookupWiki(topic) {
     let v = lookupLearnedArray(learnedWiki, topic);
-    if (v !== undefined) {
-        return v;
-    }
-    return findInFile(WIKI_PATH, topic);
+    return v !== undefined ? v : findInFile(WIKI_PATH, topic);
 }
 
 function buildWikiTopicList() {
@@ -495,6 +391,28 @@ function buildWikiTopicList() {
         topics.push(learnedWiki[i][0]);
     }
     return topics;
+}
+
+function buildDictionaryWordList() {
+    let words = collectKeysFromFile(DICTIONARY_PATH);
+    for (let i = 0; i < learnedDefs.length; i++) {
+        words.push(learnedDefs[i][0]);
+    }
+    return words;
+}
+
+let jokes = [
+    "Why did the programmer quit his job? Because he didn't get arrays.",
+    "Why do programmers prefer dark mode? Because light attracts bugs.",
+    "There are 10 types of people: those who understand binary and those who don't.",
+    "Why was the computer cold? It left its Windows open.",
+];
+let jokeIndex = 0;
+
+function randomJoke() {
+    let j = jokes[jokeIndex % jokes.length];
+    jokeIndex = jokeIndex + 1;
+    return j;
 }
 
 function listLearnedText() {
@@ -513,12 +431,8 @@ function listLearnedText() {
 }
 
 function helpText() {
-    return "Commands:\ndefine <word>\nwiki <topic>\ncalc <expr> (or just type math)\nbattery\nstatus\nteach define <word> = <text>\nteach wiki <topic> = <text>\nforget define <word>\nforget wiki <topic>\nlearned\nhello\n\nTip: underscores work as spaces, e.g. flipper_zero.\nBuilt-in definitions/wiki come from dictionary.txt and wiki.txt on the SD card.\nThis bot is fully offline and has no internet access.";
+    return "Commands:\ndefine <word>\nwiki <topic>\ncalc <expr> (or just type math)\nbattery\nstatus\njoke\nteach define <word> = <text>\nteach wiki <topic> = <text>\nforget define <word>\nforget wiki <topic>\nlearned\nhello, bye, thanks, how are you, and more\n\nMain menu has Dictionary/Wikipedia browsing and Options (set your name).\nUnderscores work as spaces, e.g. flipper_zero.\nFully offline, no internet access.";
 }
-
-// ---------------------------------------------------------------------
-// Chat command handling
-// ---------------------------------------------------------------------
 
 function processQuery(text) {
     let lower = text.toLowerCase();
@@ -552,7 +466,7 @@ function processQuery(text) {
         }
         learnedWiki.push([topic, summary]);
         appendLearnedLine("wiki::" + topic + "::" + summary + "\n");
-        return "Learned! Wiki entry for '" + topic + "' saved. It'll show up in the Wikipedia menu next time you open it.";
+        return "Learned! Wiki entry for '" + topic + "' saved.";
     }
 
     if (lower.indexOf("teach") === 0) {
@@ -561,22 +475,20 @@ function processQuery(text) {
 
     if (lower.indexOf("forget define ") === 0) {
         let word = trimStr(text.slice(14)).toLowerCase();
-        let removed = removeFromArray(learnedDefs, word);
-        if (removed) {
+        if (removeFromArray(learnedDefs, word)) {
             rewriteLearnedFile();
             return "Forgot the taught definition for '" + word + "'.";
         }
-        return "No taught definition found for '" + word + "' (built-in words can't be forgotten).";
+        return "No taught definition found for '" + word + "'.";
     }
 
     if (lower.indexOf("forget wiki ") === 0) {
         let topic = trimStr(text.slice(12)).toLowerCase();
-        let removed = removeFromArray(learnedWiki, topic);
-        if (removed) {
+        if (removeFromArray(learnedWiki, topic)) {
             rewriteLearnedFile();
             return "Forgot the taught wiki topic '" + topic + "'.";
         }
-        return "No taught wiki topic found for '" + topic + "' (built-in topics can't be forgotten).";
+        return "No taught wiki topic found for '" + topic + "'.";
     }
 
     if (lower === "learned" || lower === "list learned" || lower === "list") {
@@ -589,8 +501,7 @@ function processQuery(text) {
         let learnedOk = storage.fileExists(LEARNED_PATH);
         return "File check:\ndictionary.txt: " + (dictOk ? "found" : "MISSING") +
             "\nwiki.txt: " + (wikiOk ? "found" : "MISSING") +
-            "\nlearned.txt: " + (learnedOk ? "found" : "not created yet") +
-            "\n\nExpected at:\n" + DICTIONARY_PATH + "\n" + WIKI_PATH;
+            "\nlearned.txt: " + (learnedOk ? "found" : "not created yet");
     }
 
     if (lower.indexOf("define ") === 0) {
@@ -614,8 +525,7 @@ function processQuery(text) {
     if (lower.indexOf("calc ") === 0 || lower.indexOf("math ") === 0) {
         let expr = text.slice(5);
         if (isMathExpression(expr)) {
-            let val = evalMath(expr);
-            return expr + " = " + val.toString();
+            return expr + " = " + evalMath(expr).toString();
         }
         return "That doesn't look like a math expression I can parse.";
     }
@@ -625,14 +535,50 @@ function processQuery(text) {
     }
 
     if (isMathExpression(text)) {
-        let val = evalMath(text);
-        return text + " = " + val.toString();
+        return text + " = " + evalMath(text).toString();
     }
 
-    if (lower === "hello" || lower === "hi") {
-        return "Hello, I'm Flopper AI! Try:\ndefine <word>\nwiki <topic>\na math expression\nbattery\nteach define/wiki ...\nor 'help'";
-    }
+    let namePart = userName.length > 0 ? (", " + userName) : "";
 
+    if (lower === "hello" || lower === "hi" || lower === "hey") {
+        return "Hello" + namePart + "! I'm Flopper AI. Type 'help' for commands.";
+    }
+    if (lower === "bye" || lower === "goodbye" || lower === "see you") {
+        return "Goodbye" + namePart + "! Talk again soon.";
+    }
+    if (lower === "good morning") {
+        return "Good morning" + namePart + "!";
+    }
+    if (lower === "good night" || lower === "goodnight") {
+        return "Good night" + namePart + ", sleep well.";
+    }
+    if (lower === "thanks" || lower === "thank you" || lower === "thx") {
+        return "You're welcome" + namePart + "!";
+    }
+    if (lower === "how are you" || lower === "how's it going") {
+        return "I'm just JavaScript on a Flipper Zero, but doing great! How about you?";
+    }
+    if (lower === "who are you" || lower === "what are you" || lower === "what's your name") {
+        return "I'm Flopper AI, an offline assistant running on this Flipper Zero.";
+    }
+    if (lower === "who made you" || lower === "who created you") {
+        return "I'm a custom JavaScript script built for the Flipper Zero.";
+    }
+    if (lower === "what can you do" || lower === "what do you do") {
+        return helpText();
+    }
+    if (lower === "what's my name" || lower === "what is my name") {
+        return userName.length > 0 ? ("Your name is " + userName + "!") : "I don't know your name yet - set it in Options.";
+    }
+    if (lower === "are you real" || lower === "are you alive") {
+        return "Nope, just code! But happy to chat.";
+    }
+    if (lower === "i love you") {
+        return "That's sweet" + namePart + ", but I'm just a script!";
+    }
+    if (lower === "tell me a joke" || lower === "joke") {
+        return randomJoke();
+    }
     if (lower === "help") {
         return helpText();
     }
@@ -640,20 +586,26 @@ function processQuery(text) {
     return "I'm an offline bot with limited built-in knowledge.\nType 'help' to see what I can do, or teach me something new.";
 }
 
-// ---------------------------------------------------------------------
-// GUI wiring
-// ---------------------------------------------------------------------
-
 loadLearnedFacts();
+loadUserName();
 
-// shared mutable state, passed explicitly into every subscribe() call that
-// needs to read or write it (mutating its properties, never reassigning it)
 let navState = {
     returnTarget: null,
+    textInputMode: "chat",
 };
 
+let dictWords = buildDictionaryWordList();
+if (dictWords.length === 0) {
+    dictWords.push("(no dictionary.txt found on SD card)");
+}
+let wikiTopics = buildWikiTopicList();
+if (wikiTopics.length === 0) {
+    wikiTopics.push("(no wiki.txt found on SD card)");
+}
+
 let views = {
-    mainMenu: makeSubmenu("Flopper AI", ["Ask / Chat", "Wikipedia", "Battery", "Help", "Exit"]),
+    splash: dialogView.makeWith({ header: "Flopper AI", text: "Starting..." }),
+    mainMenu: makeSubmenu("Flopper AI", ["Ask / Chat", "Dictionary", "Wikipedia", "Battery", "Options", "Help", "Exit"]),
     textInput: textInputView.makeWith({
         header: "Ask or teach me:",
         minLength: 0,
@@ -661,59 +613,88 @@ let views = {
         defaultText: "",
         defaultTextClear: true,
     }),
-    answerBox: textBoxView.makeWith({
-        focus: "start",
-        font: "text",
-        text: "",
-    }),
-    // wikiMenu is created on demand, see mainMenu.chosen below, so that
-    // newly taught wiki topics are included every time it's opened
-    wikiMenu: null,
+    answerBox: textBoxView.makeWith({ focus: "start", font: "text", text: "" }),
+    dictionaryMenu: makeSubmenu("Dictionary", dictWords),
+    wikiMenu: makeSubmenu("Wikipedia Topics", wikiTopics),
+    optionsMenu: makeSubmenu("Options", ["Set your name", "Clear your name"]),
 };
 
 eventLoop.subscribe(views.mainMenu.chosen, function (_sub, index, gui, views, navState, eventLoop, flipper) {
     if (index === 0) {
+        views.textInput.set("header", "Ask or teach me:");
+        views.textInput.set("defaultText", "");
+        navState.textInputMode = "chat";
         gui.viewDispatcher.switchTo(views.textInput);
     } else if (index === 1) {
-        let topics = buildWikiTopicList();
-        if (topics.length === 0) {
-            topics.push("(no wiki.txt found on SD card)");
-        }
-        let newWikiMenu = makeSubmenu("Wikipedia Topics", topics);
-        views.wikiMenu = newWikiMenu;
-        eventLoop.subscribe(newWikiMenu.chosen, function (_sub2, topicIndex, gui, views, navState, topics) {
-            let topic = topics[topicIndex];
-            let info = lookupWiki(topic);
-            views.answerBox.set("text", info !== undefined ? info : "No article found for '" + topic + "'.");
-            navState.returnTarget = views.wikiMenu;
-            gui.viewDispatcher.switchTo(views.answerBox);
-        }, gui, views, navState, topics);
-        gui.viewDispatcher.switchTo(newWikiMenu);
+        gui.viewDispatcher.switchTo(views.dictionaryMenu);
     } else if (index === 2) {
+        gui.viewDispatcher.switchTo(views.wikiMenu);
+    } else if (index === 3) {
         views.answerBox.set("text", "Battery: " + flipper.getBatteryCharge().toString() + "%");
         navState.returnTarget = views.mainMenu;
         gui.viewDispatcher.switchTo(views.answerBox);
-    } else if (index === 3) {
+    } else if (index === 4) {
+        gui.viewDispatcher.switchTo(views.optionsMenu);
+    } else if (index === 5) {
         views.answerBox.set("text", helpText());
         navState.returnTarget = views.mainMenu;
         gui.viewDispatcher.switchTo(views.answerBox);
-    } else if (index === 4) {
+    } else if (index === 6) {
         eventLoop.stop();
     }
 }, gui, views, navState, eventLoop, flipper);
 
+eventLoop.subscribe(views.dictionaryMenu.chosen, function (_sub, idx, gui, views, navState, dictWords) {
+    let word = dictWords[idx];
+    let def = lookupDefine(word);
+    views.answerBox.set("text", def !== undefined ? (word + ":\n" + def) : ("No entry found for '" + word + "'."));
+    navState.returnTarget = views.dictionaryMenu;
+    gui.viewDispatcher.switchTo(views.answerBox);
+}, gui, views, navState, dictWords);
+
+eventLoop.subscribe(views.wikiMenu.chosen, function (_sub, idx, gui, views, navState, wikiTopics) {
+    let topic = wikiTopics[idx];
+    let info = lookupWiki(topic);
+    views.answerBox.set("text", info !== undefined ? info : ("No article found for '" + topic + "'."));
+    navState.returnTarget = views.wikiMenu;
+    gui.viewDispatcher.switchTo(views.answerBox);
+}, gui, views, navState, wikiTopics);
+
+eventLoop.subscribe(views.optionsMenu.chosen, function (_sub, optIndex, gui, views, navState) {
+    if (optIndex === 0) {
+        views.textInput.set("header", "What should I call you?");
+        views.textInput.set("defaultText", userName);
+        navState.textInputMode = "setName";
+        gui.viewDispatcher.switchTo(views.textInput);
+    } else if (optIndex === 1) {
+        saveUserName("");
+        views.answerBox.set("text", "Okay, I won't use a name for you.");
+        navState.returnTarget = views.optionsMenu;
+        gui.viewDispatcher.switchTo(views.answerBox);
+    }
+}, gui, views, navState);
+
 eventLoop.subscribe(views.textInput.input, function (_sub, rawText, gui, views, navState) {
     let text = replaceUnderscoresWithSpaces(rawText);
+    if (navState.textInputMode === "setName") {
+        let name = trimStr(text);
+        saveUserName(name);
+        views.textInput.set("header", "Ask or teach me:");
+        navState.textInputMode = "chat";
+        views.answerBox.set("text", name.length > 0 ? ("Got it, I'll call you " + name + ".") : "Okay, no name set.");
+        navState.returnTarget = views.optionsMenu;
+        gui.viewDispatcher.switchTo(views.answerBox);
+        return;
+    }
     let answer = processQuery(text);
     views.answerBox.set("text", answer);
     navState.returnTarget = views.textInput;
     gui.viewDispatcher.switchTo(views.answerBox);
 }, gui, views, navState);
 
-// back button handling for every screen
 eventLoop.subscribe(gui.viewDispatcher.navigation, function (_sub, _item, gui, views, navState, eventLoop) {
     let cur = gui.viewDispatcher.currentView;
-    if (cur === views.mainMenu) {
+    if (cur === views.mainMenu || cur === views.splash) {
         eventLoop.stop();
         return;
     }
@@ -721,9 +702,12 @@ eventLoop.subscribe(gui.viewDispatcher.navigation, function (_sub, _item, gui, v
         gui.viewDispatcher.switchTo(navState.returnTarget);
         return;
     }
-    // textInput, wikiMenu, or anything else -> back to the main menu
     gui.viewDispatcher.switchTo(views.mainMenu);
 }, gui, views, navState, eventLoop);
 
-gui.viewDispatcher.switchTo(views.mainMenu);
+gui.viewDispatcher.switchTo(views.splash);
+eventLoop.subscribe(eventLoop.timer("oneshot", 1200), function (_sub, _item, gui, views) {
+    gui.viewDispatcher.switchTo(views.mainMenu);
+}, gui, views);
+
 eventLoop.run();
