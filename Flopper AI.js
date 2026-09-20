@@ -56,6 +56,28 @@ function findFrom(s, needle, fromIdx) {
     return idx === -1 ? -1 : fromIdx + idx;
 }
 
+function findLastSpace(s) {
+    for (let i = s.length - 1; i >= 0; i--) {
+        if (s.charCodeAt(i) === 32) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+function isAllDigits(s) {
+    if (s.length === 0) {
+        return false;
+    }
+    for (let i = 0; i < s.length; i++) {
+        let c = s.charCodeAt(i);
+        if (c < 48 || c > 57) {
+            return false;
+        }
+    }
+    return true;
+}
+
 function skipSpaces(s, i) {
     while (i < s.length && s.charCodeAt(i) === 32) {
         i = i + 1;
@@ -430,8 +452,12 @@ function listLearnedText() {
     return out;
 }
 
+function creditsText() {
+    return "Flopper AI\n\nCreated by bobthebotbut\ngithub.com/bobthebotbut\n\n(c) 2026 bobthebotbut.\nAll rights reserved.";
+}
+
 function helpText() {
-    return "Commands:\ndefine <word>\nwiki <topic>\ncalc <expr> (or just type math)\nbattery\nstatus\njoke\nteach define <word> = <text>\nteach wiki <topic> = <text>\nforget define <word>\nforget wiki <topic>\nlearned\nhello, bye, thanks, how are you, and more\n\nMain menu has Dictionary/Wikipedia browsing and Options (set your name).\nUnderscores work as spaces, e.g. flipper_zero.\nFully offline, no internet access.";
+    return "Commands:\ndefine <word>\nwiki <topic>\ncalc <expr> (or just type math)\nsay <word> <count>\nbattery\nstatus\njoke\nteach define <word> = <text>\nteach wiki <topic> = <text>\nforget define <word>\nforget wiki <topic>\nlearned\nhello, bye, thanks, how are you, and more\n\nMain menu has Dictionary/Wikipedia browsing and Options (set your name).\nUnderscores work as spaces, e.g. flipper_zero.\nFully offline, no internet access.";
 }
 
 function processQuery(text) {
@@ -530,6 +556,43 @@ function processQuery(text) {
         return "That doesn't look like a math expression I can parse.";
     }
 
+    if (lower.indexOf("say ") === 0) {
+        let rest = trimStr(text.slice(4));
+        let restLower = rest.toLowerCase();
+        if (restLower.length > 6 && restLower.slice(restLower.length - 6) === " times") {
+            rest = trimStr(rest.slice(0, rest.length - 6));
+        }
+        let sp = findLastSpace(rest);
+        if (sp === -1) {
+            return "Use: say <word> <count>  (e.g. say hello 5)";
+        }
+        let word = trimStr(rest.slice(0, sp));
+        let countStr = trimStr(rest.slice(sp + 1));
+        if (word.length === 0 || !isAllDigits(countStr)) {
+            return "Use: say <word> <count>  (e.g. say hello 5)";
+        }
+        let count = parseInt(countStr, 10);
+        if (count <= 0) {
+            return "Count must be a positive number.";
+        }
+        let MAX_SAY = 50;
+        let capped = count > MAX_SAY;
+        if (capped) {
+            count = MAX_SAY;
+        }
+        let out = "";
+        for (let i = 0; i < count; i++) {
+            out += word;
+            if (i < count - 1) {
+                out += "\n";
+            }
+        }
+        if (capped) {
+            out += "\n(capped at " + MAX_SAY.toString() + ")";
+        }
+        return out;
+    }
+
     if (lower === "battery") {
         return "Battery: " + flipper.getBatteryCharge().toString() + "%";
     }
@@ -582,6 +645,9 @@ function processQuery(text) {
     if (lower === "help") {
         return helpText();
     }
+    if (lower === "credits") {
+        return creditsText();
+    }
 
     return "I'm an offline bot with limited built-in knowledge.\nType 'help' to see what I can do, or teach me something new.";
 }
@@ -605,7 +671,7 @@ if (wikiTopics.length === 0) {
 
 let views = {
     splash: dialogView.makeWith({ header: "Flopper AI", text: "Starting..." }),
-    mainMenu: makeSubmenu("Flopper AI", ["Ask / Chat", "Dictionary", "Wikipedia", "Battery", "Options", "Help", "Exit"]),
+    mainMenu: makeSubmenu("Flopper AI", ["Ask / Chat", "Dictionary", "Wikipedia", "Battery", "Options", "Help", "Credits", "Exit"]),
     textInput: textInputView.makeWith({
         header: "Ask or teach me:",
         minLength: 0,
@@ -640,6 +706,10 @@ eventLoop.subscribe(views.mainMenu.chosen, function (_sub, index, gui, views, na
         navState.returnTarget = views.mainMenu;
         gui.viewDispatcher.switchTo(views.answerBox);
     } else if (index === 6) {
+        views.answerBox.set("text", creditsText());
+        navState.returnTarget = views.mainMenu;
+        gui.viewDispatcher.switchTo(views.answerBox);
+    } else if (index === 7) {
         eventLoop.stop();
     }
 }, gui, views, navState, eventLoop, flipper);
